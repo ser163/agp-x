@@ -1,0 +1,40 @@
+#!/usr/bin/env node
+
+const fs = require("fs");
+const path = require("path");
+
+const { extractFunctions } = require("../core/extractor");
+const { buildEmbedding } = require("../core/embedding");
+const { matchFunction } = require("../core/matcher");
+
+const cmd = process.argv[2];
+
+if (cmd === "init") {
+  fs.mkdirSync(".agp/functions", { recursive: true });
+  fs.writeFileSync(".agp/db.json", JSON.stringify([]));
+  console.log("✔ AGP initialized");
+}
+
+if (cmd === "scan") {
+  const funcs = extractFunctions("./examples/payment-system");
+
+  const db = [];
+
+  funcs.forEach(f => {
+    f.embedding = buildEmbedding(f);
+    db.push(f);
+  });
+
+  fs.writeFileSync(".agp/db.json", JSON.stringify(db, null, 2));
+  console.log("✔ Functions scanned");
+}
+
+if (cmd === "match") {
+  const query = process.argv[3];
+
+  const db = JSON.parse(fs.readFileSync(".agp/db.json"));
+
+  const result = matchFunction(query, db);
+
+  console.log(result);
+}
